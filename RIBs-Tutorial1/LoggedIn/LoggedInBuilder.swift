@@ -13,7 +13,6 @@ protocol LoggedInDependency: Dependency {
 }
 
 final class LoggedInComponent: Component<LoggedInDependency> {
-//    var loggedInBuildable: LoggedInBuildable { dependency.loggedInBuildable }
 
     // TODO: Declare 'fileprivate' dependencies that are only used by this RIB.
 }

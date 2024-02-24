@@ -9,48 +9,65 @@ import RIBs
 import RxSwift
 import RxCocoa
 
-protocol AppRootRouting: Routing {
-    func setupLoggedIn()
-    func setupLoggedOut()
+protocol AppRootRouting: ViewableRouting {
     func attachLoggedIn()
     func attachLoggedOut()
+    
     func detachLoggedIn()
     func detachLoggedOut()
 }
 
-protocol AppRootListener: AnyObject {
-    
+protocol AppRootPresentable: Presentable {
+    var listener: AppRootPresentableListener? { get set }
+    // TODO: Declare methods the interactor can invoke the presenter to present data.
 }
 
-final class AppRootInteractor: Interactor, AppRootInteractable {
-    
+protocol AppRootListener: AnyObject {
+    // TODO: Declare methods the interactor can invoke to communicate with other RIBs.
+}
+
+final class AppRootInteractor: PresentableInteractor<AppRootPresentable>, AppRootInteractable, AppRootPresentableListener {
+
     weak var router: AppRootRouting?
     weak var listener: AppRootListener?
 
     private let loginRepository: LoginRepository
-
+    private let loginState: PublishSubject<LoginState> = PublishSubject<LoginState>()
+    
     private var disposeBag = DisposeBag()
-    init
-    (
+    
+    // TODO: Add additional dependencies to constructor. Do not perform any logic
+    // in constructor.
+    
+    init(
+        presenter: AppRootPresentable,
         loginRepository: LoginRepository
     ) {
         self.loginRepository = loginRepository
-        
-        super.init()
+        super.init(presenter: presenter)
+        presenter.listener = self
     }
 
     override func didBecomeActive() {
         super.didBecomeActive()
         
-        loginRepository.isLoggedIn
-            .subscribe(onNext: { [weak self] isLoggedIn in
-                if isLoggedIn {
-                    self?.router?.setupLoggedIn()
-                } else {
-                    self?.router?.setupLoggedOut()
+        loginState
+            .withUnretained(self)
+            .subscribe(onNext: { owner, state in
+                switch state {
+                case .loggedIn:
+                    owner.router?.attachLoggedIn()
+                case .loggedOut:
+                    owner.router?.attachLoggedOut()
                 }
             })
             .disposed(by: disposeBag)
+        
+        loginRepository.isLoggedIn
+            .map { LoginState(rawValue: $0) }
+            .bind(to: loginState)
+            .disposed(by: disposeBag)
+
     }
 
     override func willResignActive() {
@@ -58,19 +75,43 @@ final class AppRootInteractor: Interactor, AppRootInteractable {
         // TODO: Pause any business logic.
     }
     
-    func attachLoggedIn() {
-        router?.attachLoggedIn()
+    fileprivate enum LoginState: RawRepresentable {
+        typealias RawValue = Bool
+        
+        case loggedIn
+        case loggedOut
+        
+        init(rawValue: RawValue) {
+            switch rawValue {
+            case true:
+                self = .loggedIn
+            case false:
+                self = .loggedOut
+            }
+        }
+        
+        var rawValue: Bool {
+            switch self {
+            case.loggedIn:
+                return true
+            case .loggedOut:
+                return false
+            }
+        }
     }
     
-    func detachLoggedIn() {
+}
+
+extension AppRootInteractor {
+    // MARK: LoggedIn, LoggedOut과 커뮤니케이션
+    
+    func logoutButtonDidTap() {
         router?.detachLoggedIn()
-    }
-    
-    func attachLoggedOut() {
         router?.attachLoggedOut()
     }
     
-    func detachLoggedOut() {
+    func loginButtonDidTap() {
         router?.detachLoggedOut()
+        router?.attachLoggedIn()
     }
 }

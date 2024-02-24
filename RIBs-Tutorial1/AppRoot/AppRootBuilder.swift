@@ -6,59 +6,49 @@
 //
 
 import RIBs
-import UIKit
 
 protocol AppRootDependency: Dependency {
-    var loginRepository: LoginRepository { get }
-    var window: UIWindow { get }
+    // TODO: Declare the set of dependencies required by this RIB, but cannot be
+    // created by this RIB.
 }
 
 final class AppRootComponent: Component<AppRootDependency>, LoggedInDependency, LoggedOutDependency {
-    lazy var loggedInBuildable: LoggedInBuildable = {
-        return LoggedInBuilder(dependency: self)
-    }()
-    
-    lazy var loggedOutBuildable: LoggedOutBuildable = {
-        return LoggedOutBuilder(dependency: self)
-    }()
-
-    override init(
-        dependency: AppRootDependency
-    ) {
-        super.init(dependency: dependency)
-    }
+    // TODO: Declare 'fileprivate' dependencies that are only used by this RIB.
 }
 
 // MARK: - Builder
 
 protocol AppRootBuildable: Buildable {
-    func build() -> AppRootRouting
+    func build() -> LaunchRouting
 }
 
 final class AppRootBuilder: Builder<AppRootDependency>, AppRootBuildable {
-    
+
     override init(dependency: AppRootDependency) {
         super.init(dependency: dependency)
     }
-
-    /// Launch에서는 LaunchRouting을 사용함.
-    /// build 메서드에 리스너가 없고 리턴 타입도 다름
-    func build() -> AppRootRouting {
+    
+    func build() -> LaunchRouting {
+        // Repository
+        let loginRepository = LoginRepositoryImp()
         
-        let component = AppRootComponent(
-            dependency: dependency
+        let component = AppRootComponent(dependency: dependency)
+        let viewController = AppRootViewController()
+        let interactor = AppRootInteractor(
+            presenter: viewController,
+            loginRepository: loginRepository
         )
-        
-        let interactor = AppRootInteractor(loginRepository: dependency.loginRepository)
-        
+
+        //  Child RIBs
         let loggedInBuilder = LoggedInBuilder(dependency: component)
         let loggedOutBuilder = LoggedOutBuilder(dependency: component)
-        
+
         return AppRootRouter(
             interactor: interactor,
+            viewController: viewController, 
+            // Child RIBs
             loggedInBuilder: loggedInBuilder,
-            loggedOutBuilder: loggedOutBuilder, 
-            window: dependency.window
+            loggedOutBuilder: loggedOutBuilder
         )
     }
 }

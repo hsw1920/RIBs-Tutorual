@@ -19,15 +19,10 @@ import UIKit
 
 
 // Tutotial의 AppComponent
-//class AppComponent: Component<EmptyDependency>, RootDependency, AppRootDependency {
 class AppComponent: Component<EmptyDependency>, AppRootDependency {
     var loginRepository: LoginRepository
-    var window: UIWindow
-    init(
-        window: UIWindow
-    ) {
+    init() {
         self.loginRepository = LoginRepositoryImp()
-        self.window = window
         super.init(dependency: EmptyComponent())
     }
 }

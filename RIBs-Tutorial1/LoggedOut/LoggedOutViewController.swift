@@ -16,10 +16,6 @@ protocol LoggedOutPresentableListener: AnyObject {
 }
 
 final class LoggedOutViewController: UIViewController, LoggedOutPresentable, LoggedOutViewControllable {
-    func present(viewController: ViewControllable) {
-        viewController.uiviewController.modalPresentationStyle = .fullScreen
-        self.present(viewController.uiviewController, animated: false)
-    }
     
     weak var listener: LoggedOutPresentableListener?
 

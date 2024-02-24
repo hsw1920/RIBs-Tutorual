@@ -12,22 +12,17 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
-//    private var launchRouter: LaunchRouting?
-    private var routing: AppRootRouting?
+    private var launchRouter: LaunchRouting?
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         if let windowScene = scene as? UIWindowScene {
             let window = UIWindow(windowScene: windowScene)
             self.window = window
 
-            let component = AppComponent(window: window)
+            let component = AppComponent()
             let appRootBuilder = AppRootBuilder(dependency: component)
-            let router = appRootBuilder.build()
-            
-            router.interactable.activate()
-            router.load()
-            
-            self.routing = router
+            launchRouter = appRootBuilder.build()
+            launchRouter?.launch(from: window)
         }
     }
 

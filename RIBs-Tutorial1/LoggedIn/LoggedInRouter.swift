@@ -13,7 +13,7 @@ protocol LoggedInInteractable: Interactable {
 }
 
 protocol LoggedInViewControllable: ViewControllable {
-//    func present(viewController: ViewControllable)
+
 }
 
 final class LoggedInRouter: ViewableRouter<LoggedInInteractable, LoggedInViewControllable>, LoggedInRouting {

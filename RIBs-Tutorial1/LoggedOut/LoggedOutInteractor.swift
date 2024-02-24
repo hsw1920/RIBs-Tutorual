@@ -18,8 +18,7 @@ protocol LoggedOutPresentable: Presentable {
 }
 
 protocol LoggedOutListener: AnyObject {
-    func detachLoggedOut()
-    func attachLoggedIn()
+    func loginButtonDidTap()
 }
 
 final class LoggedOutInteractor: PresentableInteractor<LoggedOutPresentable>, LoggedOutInteractable, LoggedOutPresentableListener {
@@ -45,7 +44,6 @@ final class LoggedOutInteractor: PresentableInteractor<LoggedOutPresentable>, Lo
     }
     
     func login(withPlayer1Name: String?, player2Name: String?) {
-        listener?.detachLoggedOut()
-        listener?.attachLoggedIn()
+        listener?.loginButtonDidTap()
     }
 }

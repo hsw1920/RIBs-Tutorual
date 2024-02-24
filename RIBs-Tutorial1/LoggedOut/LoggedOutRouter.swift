@@ -13,7 +13,6 @@ protocol LoggedOutInteractable: Interactable {
 }
 
 protocol LoggedOutViewControllable: ViewControllable {
-    func present(viewController: ViewControllable)
 }
 
 final class LoggedOutRouter: ViewableRouter<LoggedOutInteractable, LoggedOutViewControllable>, LoggedOutRouting {

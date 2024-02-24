@@ -6,115 +6,90 @@
 //
 
 import RIBs
-import UIKit
+import RxSwift
 
-/// Build 시 AppRootRouter가 LoggedIn, LoggedOut의 Listener로써 작동하기 위해서 채택함.
 protocol AppRootInteractable: Interactable, LoggedInListener, LoggedOutListener {
     var router: AppRootRouting? { get set }
     var listener: AppRootListener? { get set }
 }
 
 protocol AppRootViewControllable: ViewControllable {
-    var viewController: AppRootViewControllable { get }
-    func present(viewController: ViewControllable)
 }
 
-//final class AppRootRouter: LaunchRouter<AppRootInteractable, AppRootViewControllable>, AppRootRouting {
-final class AppRootRouter: Router<AppRootInteractable>, AppRootRouting {
+final class AppRootRouter: LaunchRouter<AppRootInteractable, AppRootViewControllable> {
+
+    private let loggedInBuilder: LoggedInBuildable
+    private var loggedInRouting: Routing?
+    
+    private let loggedOutBuilder: LoggedOutBuildable
+    private var loggedOutRouting: Routing?
+    
+    private var disposeBag = DisposeBag()
 
     init(
         interactor: AppRootInteractable,
+        viewController: AppRootViewControllable,
         loggedInBuilder: LoggedInBuildable,
-        loggedOutBuilder: LoggedOutBuildable,
-        window: UIWindow
+        loggedOutBuilder: LoggedOutBuildable
     ) {
-        
         self.loggedInBuilder = loggedInBuilder
         self.loggedOutBuilder = loggedOutBuilder
-        self.window = window
         
-        super.init(interactor: interactor)
+        super.init(interactor: interactor, viewController: viewController)
         interactor.router = self
     }
 
-    func setupLoggedIn() {
-        let router = loggedInBuilder.build(withListener: interactor)
-        self.loggedInRouting = router
-        self.attachChild(router)
-        setupRootViewController(with: router.viewControllable)
-        
-        print("## Setup: LoggedIn")
-    }
-    
-    func setupLoggedOut() {
-        let router = loggedOutBuilder.build(withListener: interactor)
-        self.loggedOutRouting = router
-        self.attachChild(router)
-        self.setupRootViewController(with: router.viewControllable)
-        
-        print("## Setup: LoggedOut")
-    }
-    
-    func attachLoggedIn() {
-        if loggedInRouting != nil {
-             return
-        }
-        
-        let router = loggedInBuilder.build(withListener: interactor)
-        self.loggedInRouting = router
-        self.attachChild(router)
-        
-        self.setupRootViewController(with: router.viewControllable)
+}
 
-        print("## Attach: LoggedIn")
+extension AppRootRouter: AppRootRouting {
+
+    func attachLoggedIn() {
+        // loggedInRouting이 nil일 때만 Attach 하도록
+        if loggedInRouting != nil {
+            return
+        }
+
+        // Attach
+        let router = loggedInBuilder.build(withListener: interactor)
+        router.viewControllable.uiviewController.modalPresentationStyle = .fullScreen
+        viewController.replaceRoot(to: router.viewControllable)
+        
+        attachChild(router)
+        self.loggedInRouting = router
     }
     
     func attachLoggedOut() {
+        // loggedOutRouting이 nil일 때만 Attach 하도록
         if loggedOutRouting != nil {
             return
         }
         
+        // Detach
         let router = loggedOutBuilder.build(withListener: interactor)
+        router.viewControllable.uiviewController.modalPresentationStyle = .fullScreen
+        viewController.replaceRoot(to: router.viewControllable)
+        
+        attachChild(router)
         self.loggedOutRouting = router
-        self.attachChild(router)
-
-        self.setupRootViewController(with: router.viewControllable)
-        
-        print("## Attach: LoggedOut")
-    }
-    
-    func detachLoggedOut() {
-        guard let router = loggedOutRouting else {
-            return
-        }
-        
-        self.detachChild(router)
-        self.loggedOutRouting = nil
-        
-        print("## Detach: LoggedOut")
     }
     
     func detachLoggedIn() {
+        // loggedInRouting이 nil이 아닐때만 detach 하도록
         guard let router = loggedInRouting else {
             return
         }
-        
-        self.detachChild(router)
-        self.loggedInRouting = nil
-        
-        print("## Detach: LoggedIn")
+        viewController.dismiss(animated: false, completion: nil)
+        detachChild(router)
+        loggedInRouting = nil
     }
     
-    func setupRootViewController(with viewControllable: ViewControllable) {
-        let vc = viewControllable.uiviewController
-        window.rootViewController = vc
-        window.makeKeyAndVisible()
+    func detachLoggedOut() {
+        // loggedOutRouting이 nil이 아닐때만 detach 하도록
+        guard let router = loggedOutRouting else {
+            return
+        }
+        viewController.dismiss(animated: false, completion: nil)
+        detachChild(router)
+        loggedOutRouting = nil
     }
-    
-    // MARK: - Private
-    private let window: UIWindow
-    private let loggedInBuilder: LoggedInBuildable
-    private let loggedOutBuilder: LoggedOutBuildable
-    private var loggedInRouting: Routing?
-    private var loggedOutRouting: Routing?
 }
